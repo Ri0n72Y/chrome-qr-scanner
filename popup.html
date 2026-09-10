@@ -21,8 +21,13 @@
         <span id="status-text">Scanning…</span>
       </section>
 
+      <section id="preview-section" class="preview" hidden>
+        <canvas id="preview" aria-label="Captured tab preview"></canvas>
+      </section>
+
       <section id="result" class="result" hidden>
-        <div class="result-label">Result</div>
+        <div class="result-label">QR codes</div>
+        <div id="result-list" class="result-list"></div>
         <div id="result-text" class="result-text"></div>
         <div class="actions">
           <button id="copy" class="button primary" type="button">Copy</button>

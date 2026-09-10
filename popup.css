@@ -88,6 +88,22 @@ h1 {
   background: #b5413e;
 }
 
+.preview {
+  margin-top: 10px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, CanvasText 16%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, CanvasText 4%, Canvas);
+  text-align: center;
+}
+
+.preview canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 200px;
+  margin: auto;
+}
+
 .result {
   margin-top: 12px;
   padding: 12px;
@@ -105,9 +121,39 @@ h1 {
   text-transform: uppercase;
 }
 
-.result-text {
-  max-height: 160px;
+.result-list {
+  display: grid;
+  gap: 6px;
+  max-height: 132px;
   overflow: auto;
+}
+
+.result-item {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-item[aria-pressed="true"] {
+  border-color: #2563eb;
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+}
+
+.result-text {
+  max-height: 120px;
+  margin-top: 10px;
+  padding-top: 10px;
+  overflow: auto;
+  border-top: 1px solid color-mix(in srgb, CanvasText 12%, transparent);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;

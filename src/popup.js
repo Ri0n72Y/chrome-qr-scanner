@@ -1,45 +1,27 @@
-import decodeQR from "qr/decode.js";
+import { decodeQRBatch } from "qr/decode.js";
 
 const MAX_IMAGE_SIDE = 4096;
 const STATIC_SCAN_TIME_LIMIT_MS = 500;
 
 const status = document.querySelector(".status");
 const statusText = document.querySelector("#status-text");
+const previewSection = document.querySelector("#preview-section");
+const previewCanvas = document.querySelector("#preview");
 const result = document.querySelector("#result");
+const resultList = document.querySelector("#result-list");
 const resultText = document.querySelector("#result-text");
 const copyButton = document.querySelector("#copy");
 const openLink = document.querySelector("#open");
 const rescanButton = document.querySelector("#rescan");
 
+let currentImage = null;
+let currentResults = [];
 let currentValue = "";
 let scanning = false;
 
 function setStatus(state, message) {
   status.dataset.state = state;
   statusText.textContent = message;
-}
-
-function setResult(value) {
-  currentValue = value;
-  resultText.textContent = value;
-  result.hidden = false;
-
-  const url = toSafeHttpUrl(value);
-  if (url) {
-    openLink.href = url;
-    openLink.hidden = false;
-  } else {
-    openLink.removeAttribute("href");
-    openLink.hidden = true;
-  }
-}
-
-function clearResult() {
-  currentValue = "";
-  resultText.textContent = "";
-  result.hidden = true;
-  openLink.removeAttribute("href");
-  openLink.hidden = true;
 }
 
 function toSafeHttpUrl(value) {
@@ -52,6 +34,85 @@ function toSafeHttpUrl(value) {
     // Non-URL QR payloads are still valid scan results.
   }
   return null;
+}
+
+function drawPreview(selected = null) {
+  if (!currentImage) return;
+
+  const context = previewCanvas.getContext("2d");
+  if (!context) return;
+
+  context.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  context.drawImage(currentImage, 0, 0, previewCanvas.width, previewCanvas.height);
+
+  if (!selected) return;
+
+  const points = selected.outline;
+  context.save();
+  context.beginPath();
+  context.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    context.lineTo(points[i].x, points[i].y);
+  }
+  context.closePath();
+  context.fillStyle = "rgba(37, 99, 235, 0.18)";
+  context.strokeStyle = "#2563eb";
+  context.lineWidth = Math.max(3, Math.min(previewCanvas.width, previewCanvas.height) / 160);
+  context.fill();
+  context.stroke();
+  context.restore();
+}
+
+function selectResult(index) {
+  const selected = currentResults[index];
+  if (!selected) return;
+
+  currentValue = selected.value;
+  resultText.textContent = selected.value;
+
+  for (const [itemIndex, button] of [...resultList.children].entries()) {
+    button.setAttribute("aria-pressed", String(itemIndex === index));
+  }
+
+  const url = toSafeHttpUrl(selected.value);
+  if (url) {
+    openLink.href = url;
+    openLink.hidden = false;
+  } else {
+    openLink.removeAttribute("href");
+    openLink.hidden = true;
+  }
+
+  drawPreview(selected);
+}
+
+function setResults(results) {
+  currentResults = results;
+  resultList.replaceChildren();
+
+  results.forEach((item, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "result-item";
+    button.textContent = `${index + 1}. ${item.value.replace(/\s+/g, " ")}`;
+    button.addEventListener("click", () => selectResult(index));
+    resultList.appendChild(button);
+  });
+
+  result.hidden = false;
+  selectResult(0);
+}
+
+function clearScan() {
+  currentImage = null;
+  currentResults = [];
+  currentValue = "";
+  previewSection.hidden = true;
+  result.hidden = true;
+  resultList.replaceChildren();
+  resultText.textContent = "";
+  openLink.removeAttribute("href");
+  openLink.hidden = true;
 }
 
 function captureVisibleTab() {
@@ -82,17 +143,18 @@ function imageDataFromDataUrl(dataUrl) {
       const width = Math.max(1, Math.round(naturalWidth * scale));
       const height = Math.max(1, Math.round(naturalHeight * scale));
 
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
+      previewCanvas.width = width;
+      previewCanvas.height = height;
 
-      const context = canvas.getContext("2d", { willReadFrequently: true });
+      const context = previewCanvas.getContext("2d", { willReadFrequently: true });
       if (!context) {
         reject(new Error("Canvas 2D is unavailable."));
         return;
       }
 
+      currentImage = image;
       context.drawImage(image, 0, 0, width, height);
+      previewSection.hidden = false;
       resolve(context.getImageData(0, 0, width, height));
     };
 
@@ -106,19 +168,36 @@ async function scan() {
 
   scanning = true;
   rescanButton.disabled = true;
-  clearResult();
+  clearScan();
   setStatus("scanning", "Scanning visible area…");
 
   try {
     const capture = await captureVisibleTab();
     const imageData = await imageDataFromDataUrl(capture);
-    const decoded = decodeQR(imageData, {
+    const detections = [];
+
+    await decodeQRBatch([imageData], {
+      maxSize: { width: imageData.width, height: imageData.height },
       effort: Infinity,
-      timeLimit: STATIC_SCAN_TIME_LIMIT_MS
+      timeLimit: STATIC_SCAN_TIME_LIMIT_MS,
+      pointsOnDetect: (points, decoded) => {
+        if (typeof decoded !== "string") return;
+        detections.push({
+          value: decoded,
+          outline: points.outline.map(({ x, y }) => ({ x, y }))
+        });
+      }
     });
 
-    setResult(decoded);
-    setStatus("success", "QR code found");
+    if (!detections.length) {
+      throw new Error("No QR code found.");
+    }
+
+    setResults(detections);
+    setStatus(
+      "success",
+      `${detections.length} QR code${detections.length === 1 ? "" : "s"} found`
+    );
   } catch (error) {
     console.debug("QR scan failed:", error);
     const message = String(error?.message || error);
