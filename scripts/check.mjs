@@ -38,7 +38,7 @@ const [results] = await decodeQRBatch([{ width, height, data }], {
   timeLimit: Infinity,
   pointsOnDetect: (points, result) => {
     if (typeof result === "string") {
-      detections.push({ value: result, box: points.boundingBox });
+      detections.push({ value: result, outline: points.outline });
     }
   }
 });
@@ -48,5 +48,10 @@ assert.deepEqual(
   [...expected].sort()
 );
 assert.equal(detections.length, 2);
-assert.ok(detections.every(({ box }) => box.width > 0 && box.height > 0));
+assert.ok(
+  detections.every(
+    ({ outline }) =>
+      outline.length === 4 && outline.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
+  )
+);
 console.log("Multi-QR decoder smoke check passed");
