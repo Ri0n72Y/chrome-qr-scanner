@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR Scanner</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div>
+          <h1>QR Scanner</h1>
+          <p>Scan the visible area of this tab.</p>
+        </div>
+        <button id="rescan" class="icon-button" type="button" title="Scan again" aria-label="Scan again">↻</button>
+      </header>
+
+      <section class="status" aria-live="polite">
+        <span id="status-indicator" class="status-indicator" aria-hidden="true"></span>
+        <span id="status-text">Scanning…</span>
+      </section>
+
+      <section id="result" class="result" hidden>
+        <div class="result-label">Result</div>
+        <div id="result-text" class="result-text"></div>
+        <div class="actions">
+          <button id="copy" class="button primary" type="button">Copy</button>
+          <a id="open" class="button" target="_blank" rel="noopener noreferrer" hidden>Open</a>
+        </div>
+      </section>
+
+      <p class="privacy">Processed locally. Nothing is uploaded.</p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
