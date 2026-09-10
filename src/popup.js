@@ -71,7 +71,7 @@ function selectResult(index) {
   resultText.textContent = selected.value;
 
   for (const [itemIndex, button] of [...resultList.children].entries()) {
-    button.setAttribute("aria-selected", String(itemIndex === index));
+    button.setAttribute("aria-pressed", String(itemIndex === index));
   }
 
   const url = toSafeHttpUrl(selected.value);
