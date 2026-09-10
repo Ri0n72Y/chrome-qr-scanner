@@ -143,7 +143,7 @@ h1 {
   white-space: nowrap;
 }
 
-.result-item[aria-selected="true"] {
+.result-item[aria-pressed="true"] {
   border-color: #2563eb;
   background: color-mix(in srgb, #2563eb 12%, transparent);
 }
