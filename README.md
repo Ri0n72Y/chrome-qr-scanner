@@ -13,8 +13,10 @@ A minimal Chrome extension that scans QR codes from the visible area of the curr
 
 - Scans the currently visible tab when the popup opens
 - Works with regular webpages and browser-rendered PDFs that Chrome allows to be captured
-- Displays the decoded QR payload as plain text
-- Copies the decoded value to the clipboard on user action
+- Detects multiple QR codes in the same visible area
+- Shows the captured tab preview and highlights the selected QR code
+- Displays the selected QR payload as plain text
+- Copies the selected value to the clipboard on user action
 - Offers an Open action only for `http:` and `https:` URLs
 - Rescans on demand
 
@@ -55,7 +57,7 @@ The unpacked Chrome extension is generated in `dist/`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
 4. Select this repository's `dist/` directory.
-5. Open a page containing a visible QR code and click the extension icon.
+5. Open a page containing one or more visible QR codes and click the extension icon.
 
 ## Architecture
 
@@ -72,12 +74,14 @@ chrome.tabs.captureVisibleTab()
 in-memory PNG → Canvas ImageData
       │
       ▼
-local QR decoder
+local multi-QR decoder
       │
-      ▼
-plain-text result
-      ├── copy
-      └── open (http/https only)
+      ├── result list
+      └── detection coordinates → preview highlight
+              │
+              └── selected result
+                    ├── copy
+                    └── open (http/https only)
 ```
 
 The decoder is [`qr`](https://github.com/paulmillr/qr), bundled locally at build time. It has no runtime dependencies and is licensed under MIT OR Apache-2.0.
@@ -85,8 +89,8 @@ The decoder is [`qr`](https://github.com/paulmillr/qr), bundled locally at build
 ## Current limitations
 
 - Only the visible viewport is scanned; the extension does not crawl the full page.
-- The decoder returns at most one QR code per scan.
-- Camera scanning and local image-file scanning are not implemented yet.
+- Highlights are shown in the popup screenshot preview, not injected into the webpage.
+- Camera scanning, local image-file scanning, and manual area selection are not implemented yet.
 - Some browser-internal pages cannot be captured by extensions.
 
 ## Development principles
