@@ -6,11 +6,16 @@ const expected = "https://example.com/qr-smoke";
 const matrix = encodeQR(expected, "raw", { border: 4 });
 const scale = 4;
 const size = matrix.length * scale;
-const data = new Uint8Array(size * size);
+const data = new Uint8Array(size * size * 4);
 
 for (let y = 0; y < size; y++) {
   for (let x = 0; x < size; x++) {
-    data[y * size + x] = matrix[Math.floor(y / scale)][Math.floor(x / scale)] ? 0 : 255;
+    const color = matrix[Math.floor(y / scale)][Math.floor(x / scale)] ? 0 : 255;
+    const i = (y * size + x) * 4;
+    data[i] = color;
+    data[i + 1] = color;
+    data[i + 2] = color;
+    data[i + 3] = 255;
   }
 }
 
